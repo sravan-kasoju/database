@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e62befa4-9eae-4b67-9943-0ad821acee86" >
+		<http:listener-connection host="${listener.host}" port="${listener.port}" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="e249803f-a68b-4bae-8cc4-19e87ea45b38" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Chary@2891" database="mydb" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="d9453b61-30ae-4222-ab7c-82c1ac13d21f" file="internal.yaml" />
+	<flow name="database-yamlFlow" doc:id="6f7110a4-e0e8-4571-955a-e62b2c136581" >
+		<http:listener doc:name="Listener" doc:id="12d3e930-6804-4288-a01d-18952da4257c" path="${listener.path}" config-ref="HTTP_Listener_config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="249c221f-5d00-4704-bd30-f44afcb3b7e0" message='#["database yaml flow started" ++ now()]'/>
+		<try doc:name="Try" doc:id="ad242a64-1fd8-43e6-8fa2-6c364e5d5887" >
+			<db:select doc:name="Select" doc:id="80fe46e0-9a6b-4ade-8101-97639a4e7b99" config-ref="Database_Config">
+			<db:sql><![CDATA[select * from students]]></db:sql>
+		</db:select>
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="73274e4e-133b-40fc-82d5-cfc455aba55b" >
+					<ee:transform doc:name="Transform Message" doc:id="8dee55d7-d54b-490d-bf5c-28aad041f46a" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="9ec5df23-4a19-4fa5-b814-b1431347927d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<!-- [STUDIO:"Transform Message"]<ee:transform doc:name="Transform Message" doc:id="2139f77f-562e-4d1f-9f46-7437fff4d183" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var allCities = payload.city
+&#45;&#45;-
+(allCities distinctBy $) filter ((city) -> sizeOf(allCities filter ($ == city)) > 1)
+
+&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+		<foreach doc:name="For Each" doc:id="acbc5d22-3eab-4d31-9dfe-996794c38b9c" >
+			<ee:transform doc:name="Transform Message" doc:id="c21373bc-dd47-4eed-9244-6704ef9f65dd" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="uuid" ><![CDATA[%dw 2.0
+output application/json
+---
+uuid()]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="Transform Message" doc:id="22231840-ee1e-489b-9e2e-624e609c8250" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="fb7ecb95-77b8-4ffb-bf8d-f951492d503b" message="#[vars.uuid as Object]"/>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="af996924-0c17-4401-9e1d-87b24cbb0b70" message='#["database yaml flow ended" ++ now()]'/>
+	</flow>
+</mule>
