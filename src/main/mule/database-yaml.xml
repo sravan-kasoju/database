@@ -29,7 +29,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 output application/json
 ---
 {
-	"message": error.description
+	"message": error.description ++ "issue has been raised"
 }]]></ee:set-payload>
 						</ee:message>
 					</ee:transform>
@@ -69,10 +69,9 @@ uuid()]]></ee:set-variable>
 			<ee:transform doc:name="Transform Message" doc:id="22231840-ee1e-489b-9e2e-624e609c8250" >
 				<ee:message >
 					<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
-{
-}]]></ee:set-payload>
+payload]]></ee:set-payload>
 				</ee:message>
 			</ee:transform>
 			<logger level="INFO" doc:name="Logger" doc:id="fb7ecb95-77b8-4ffb-bf8d-f951492d503b" message="#[vars.uuid as Object]"/>
